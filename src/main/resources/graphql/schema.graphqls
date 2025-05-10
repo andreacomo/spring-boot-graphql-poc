@@ -1,5 +1,13 @@
 type Query {
+    book: BookQueries
+    order: OrderQueries
+}
+
+type BookQueries {
     bookById(id: ID!): Book
+}
+
+type OrderQueries {
     orderById(id: ID!): Order
 }
 

@@ -7,10 +7,7 @@ import it.codingjam.spring_boot_graphql_poc.controllers.dtos.BookDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.OrderDetailDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.OrderDto;
 import it.codingjam.spring_boot_graphql_poc.models.Book;
-import it.codingjam.spring_boot_graphql_poc.models.Order;
-import it.codingjam.spring_boot_graphql_poc.models.OrderDetail;
 import it.codingjam.spring_boot_graphql_poc.services.OrderService;
-import org.apache.juli.logging.Log;
 import org.dataloader.BatchLoaderEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Controller
+@SchemaMapping(typeName = "OrderQueries")
 public class OrderController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderController.class);
@@ -35,13 +31,18 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    @QueryMapping
+    public OrderQueries order() {
+        return new OrderQueries();
+    }
+
 //    @QueryMapping
 //    public Order orderById(@Argument UUID id, GraphQLContext context) {
 //        return orderService.findOrderById(id)
 //                .orElse(null);
 //    }
 
-    @QueryMapping
+    @SchemaMapping(typeName = "OrderQueries")
     public OrderDto orderById(@Argument UUID id, DataFetchingEnvironment env) {
         List<String> selectedFieldNames = env.getSelectionSet().getFields().stream()
                 .map(SelectedField::getFullyQualifiedName)
@@ -90,4 +91,6 @@ public class OrderController {
 //        Map<UUID, Book> orderIdToBook = context.get("orderIdToBook");
 //        return new BookDto(orderIdToBook.get(detail.id()));
 //    }
+
+    public record OrderQueries() {}
 }

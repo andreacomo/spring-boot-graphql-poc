@@ -1,6 +1,7 @@
 package it.codingjam.spring_boot_graphql_poc.controllers;
 
 import graphql.GraphQLContext;
+import graphql.schema.DataFetchingEnvironment;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.AuthorDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.BookDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.SimpleBookDto;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import java.util.UUID;
 
 @Controller
+@SchemaMapping(typeName = "BookQueries")
 public class BookController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BookController.class);
@@ -27,13 +29,18 @@ public class BookController {
         this.bookService = bookService;
     }
 
+    @QueryMapping
+    public BookQueries book() {
+        return new BookQueries();
+    }
+
     /**
      * {@link BookDto} exposes getAuthor(), so there's no need of {@link SchemaMapping}
      * @param id
      * @param context
      * @return
      */
-    @QueryMapping
+    @SchemaMapping(typeName = "BookQueries")
     public BookDto bookById(@Argument UUID id, GraphQLContext context) {
         LOGGER.info("bookById: {}", id);
         LOGGER.info("context: {}", context);
@@ -59,4 +66,8 @@ public class BookController {
 //        LOGGER.info("getting author {} for book {}", author, book);
 //        return new AuthorDto(author);
 //    }
+
+    public record BookQueries() {
+
+    }
 }
