@@ -7,3 +7,5 @@ services:
       - 'POSTGRES_USER=graphql-poc'
     ports:
       - '5432:5432'
+    volumes:
+      - ./dummy-data.sql:/docker-entrypoint-initdb.d/dummy-data.sql
