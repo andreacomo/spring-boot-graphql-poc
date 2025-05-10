@@ -1,29 +1,6 @@
+scalar DateTime
+    @specifiedBy(url: "https://scalars.graphql.org/andimarek/date-time.html")
+
 type Query {
-    bookById(id: ID!): Book
-    orderById(id: ID!): Order
-}
 
-type Book {
-    id: ID!
-    name: String!
-    pageCount: Int
-    author: Author!
-}
-
-type Author {
-    id: ID!
-    firstName: String
-    lastName: String
-}
-
-type Order {
-    id: ID!,
-    orderDetails: [OrderDetail]!
-}
-
-type OrderDetail {
-    id: ID!
-    quantity: Int!
-    book: Book!
-    price: Float!
 }

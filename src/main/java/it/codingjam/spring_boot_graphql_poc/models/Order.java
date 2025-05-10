@@ -3,6 +3,7 @@ package it.codingjam.spring_boot_graphql_poc.models;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +15,8 @@ public class Order implements Serializable {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    private OffsetDateTime creationDate;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderDetail> details;
 
@@ -23,6 +26,14 @@ public class Order implements Serializable {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public OffsetDateTime getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(OffsetDateTime creationDate) {
+        this.creationDate = creationDate;
     }
 
     public List<OrderDetail> getDetails() {
