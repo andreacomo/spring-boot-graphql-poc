@@ -17,7 +17,7 @@ public class OrderDetail implements Serializable {
 
     private Float price;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id")
     private Book book;
 
