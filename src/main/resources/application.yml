@@ -1,0 +1,13 @@
+spring:
+  application:
+      name: spring-boot-graphql-poc
+  graphql:
+    graphiql:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true # complica un po' con Hibernate perché la costruzione della risposta è non blocking (https://docs.spring.io/spring-graphql/reference/controllers.html#controllers.schema-mapping.return.values)
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
