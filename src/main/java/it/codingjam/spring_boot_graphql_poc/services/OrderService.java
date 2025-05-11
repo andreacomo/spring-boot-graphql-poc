@@ -5,6 +5,7 @@ import it.codingjam.spring_boot_graphql_poc.models.Book;
 import it.codingjam.spring_boot_graphql_poc.models.Order;
 import it.codingjam.spring_boot_graphql_poc.models.OrderDetail;
 import it.codingjam.spring_boot_graphql_poc.repositories.OrderRepository;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,13 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<Order> findAllOrders() {
         return orderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Slice<Order> findAllOrders(int limit, long offset) {
+        int page = (int) (offset / limit);
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "creationDate"));
+        return orderRepository.findSlice(pageRequest);
     }
 
     @Transactional(readOnly = true)

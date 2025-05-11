@@ -5,7 +5,7 @@ Trying graphQL on `http://localhost:8080/graphiql``:
 * query:
   * single element
     ```graphql
-    query MyQuery {
+    query QueryById {
       orderById(id: "109e1e4c-6fd4-4588-bc7e-a15f86413f8b") {
         creationDate
         orderDetails {
@@ -24,7 +24,7 @@ Trying graphQL on `http://localhost:8080/graphiql``:
     ```
   * list
     ```graphql
-    query MyQuery {
+    query QueryAll {
       orders {
         id
         orderDetails {
@@ -42,6 +42,25 @@ Trying graphQL on `http://localhost:8080/graphiql``:
     }
     ```
   * paged
+    ```graphql
+    query QueryPage2 {
+      ordersScrollable(first: 2, after: "T18x") {
+        edges {
+          cursor
+          node {
+            id
+            creationDate
+          }
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+      }
+    }
+    ```
 * mutation
   * creation
     ```graphql
