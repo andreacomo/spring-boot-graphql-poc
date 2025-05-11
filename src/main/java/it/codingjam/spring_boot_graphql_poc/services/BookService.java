@@ -22,7 +22,7 @@ public class BookService {
     }
 
     public Optional<Book> findBookById(UUID id) {
-        return bookRepository.findById(id);
+        return bookRepository.findByIdWithAuthor(id);
     }
 
     public Book saveBook(Book book) {

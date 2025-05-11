@@ -1,11 +1,7 @@
 package it.codingjam.spring_boot_graphql_poc.controllers;
 
 import graphql.GraphQLContext;
-import it.codingjam.spring_boot_graphql_poc.controllers.dtos.AuthorDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.BookDto;
-import it.codingjam.spring_boot_graphql_poc.controllers.dtos.SimpleBookDto;
-import it.codingjam.spring_boot_graphql_poc.models.Author;
-import it.codingjam.spring_boot_graphql_poc.models.Book;
 import it.codingjam.spring_boot_graphql_poc.services.BookService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +24,9 @@ public class BookController {
     }
 
     /**
-     * {@link BookDto} exposes getAuthor(), so there's no need of {@link SchemaMapping}
+     * {@link BookDto} exposes getAuthor() <strong>always fetched</strong>,
+     * so there's no need of {@link SchemaMapping}
+     * -> this is not optimized because author is always queried even if not returned
      * @param id
      * @param context
      * @return
@@ -41,22 +39,4 @@ public class BookController {
                 .map(BookDto::new)
                 .orElse(null);
     }
-//
-//    @QueryMapping
-//    public SimpleBookDto simpleBookById(@Argument UUID id, GraphQLContext context) {
-//        LOGGER.info("simpleBookById: {}", id);
-//        return bookService.findBookById(id)
-//                .map(book -> {
-//                    context.put("author", book.getAuthor());
-//                    return new SimpleBookDto(book);
-//                })
-//                .orElse(null);
-//    }
-//
-//    @SchemaMapping(typeName = "Book")
-//    public AuthorDto author(SimpleBookDto book, GraphQLContext context) {
-//        Author author = context.get("author");
-//        LOGGER.info("getting author {} for book {}", author, book);
-//        return new AuthorDto(author);
-//    }
 }
