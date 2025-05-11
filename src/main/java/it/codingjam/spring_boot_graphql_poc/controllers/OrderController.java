@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Controller
 public class OrderController {
@@ -44,27 +46,70 @@ public class OrderController {
         List<String> selectedFieldNames = getSelectedFieldNames(env);
         LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
         env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
-        env.getGraphQlContext().put("orderId", id);
 
         return orderService.findOrderById(id)
-                .map(o -> {
-                    return new OrderDto(o.getId(), o.getCreationDate());
-                })
+                .map(o -> new OrderDto(o.getId(), o.getCreationDate()))
                 .orElse(null);
     }
 
-    @SchemaMapping(typeName = "Order")
-    public List<OrderDetailDto> orderDetails(OrderDto order, @ContextValue("selectedFieldNames") List<String> selectedFieldNames, GraphQLContext context) {
+    @QueryMapping
+    public List<OrderDto> orders(DataFetchingEnvironment env) {
+        List<String> selectedFieldNames = getSelectedFieldNames(env);
+        LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
+        env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
+
+        return orderService.findAllOrders().stream()
+                .map(o -> new OrderDto(o.getId(), o.getCreationDate()))
+                .toList();
+    }
+
+    @MutationMapping
+    public OrderDto createOrder(@Argument List<OrderDetailInput> orderDetails, DataFetchingEnvironment env) {
+        Order order = orderService.saveOrder(orderDetails);
+        env.getGraphQlContext().put("selectedFieldNames", getSelectedFieldNames(env));
+
+        return new OrderDto(order.getId(), order.getCreationDate());
+    }
+
+    @BatchMapping(typeName = "Order")
+    public Map<OrderDto, List<OrderDetailDto>> orderDetails(List<OrderDto> orders, @ContextValue("selectedFieldNames") List<String> selectedFieldNames, GraphQLContext context) {
         boolean withBooks = selectedFieldNames.contains("Order.orderDetails/OrderDetail.book");
         Map<UUID, Book> detailIdToBook = new HashMap<>();
         context.put("detailIdToBook", detailIdToBook);
-        return orderService.findDetailsByOrderId(order.id(), withBooks).stream()
-                .map(d -> {
-                    detailIdToBook.put(d.getId(), d.getBook());
-                    return new OrderDetailDto(d.getId(), d.getQuantity(), d.getPrice());
-                })
+
+        List<UUID> orderIds = orders.stream()
+                .map(OrderDto::id)
                 .toList();
+        Map<UUID, OrderDto> ordersById = orders.stream()
+                .collect(Collectors.toMap(OrderDto::id, Function.identity()));
+
+        return orderService.findDetailsByOrderId(orderIds, withBooks).entrySet().stream()
+                .reduce(
+                        new HashMap<>(),
+                        (acc, entry) -> {
+                            acc.computeIfAbsent(ordersById.get(entry.getKey().getId()), order -> entry.getValue().stream()
+                                    .map(d -> {
+                                        detailIdToBook.put(d.getId(), d.getBook());
+                                        return new OrderDetailDto(d.getId(), d.getQuantity(), d.getPrice());
+                                    })
+                                    .toList());
+                            return acc;
+                        },
+                        (o1, o2) -> o1);
     }
+
+//    @SchemaMapping(typeName = "Order")
+//    public List<OrderDetailDto> orderDetails(OrderDto order, @ContextValue("selectedFieldNames") List<String> selectedFieldNames, GraphQLContext context) {
+//        boolean withBooks = selectedFieldNames.contains("Order.orderDetails/OrderDetail.book");
+//        Map<UUID, Book> detailIdToBook = new HashMap<>();
+//        context.put("detailIdToBook", detailIdToBook);
+//        return orderService.findDetailsByOrderId(order.id(), withBooks).stream()
+//                .map(d -> {
+//                    detailIdToBook.put(d.getId(), d.getBook());
+//                    return new OrderDetailDto(d.getId(), d.getQuantity(), d.getPrice());
+//                })
+//                .toList();
+//    }
 
     @BatchMapping(typeName = "OrderDetail")
     public Map<OrderDetailDto, BookDto> book(List<OrderDetailDto> details, @ContextValue("detailIdToBook") Map<UUID, Book> detailIdToBook , BatchLoaderEnvironment env) {
@@ -79,14 +124,6 @@ public class OrderController {
                             return acc;
                         },
                         (o1, o2) -> o1);
-    }
-
-    @MutationMapping
-    public OrderDto createOrder(@Argument List<OrderDetailInput> orderDetails, DataFetchingEnvironment env) {
-        Order order = orderService.saveOrder(orderDetails);
-        env.getGraphQlContext().put("selectedFieldNames", getSelectedFieldNames(env));
-        env.getGraphQlContext().put("orderId", order.getId());
-        return new OrderDto(order.getId(), order.getCreationDate());
     }
 
     private static List<String> getSelectedFieldNames(DataFetchingEnvironment env) {

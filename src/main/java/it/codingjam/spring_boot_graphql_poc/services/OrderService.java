@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -31,11 +33,27 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<Order> findAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public List<OrderDetail> findDetailsByOrderId(UUID orderId, boolean withBooks) {
         if (withBooks) {
             return orderRepository.findOrderDetailsWithBooksByOrderId(List.of(orderId));
         } else {
             return orderRepository.findOrderDetailsByOrderId(List.of(orderId));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Order, List<OrderDetail>> findDetailsByOrderId(List<UUID> orderIds, boolean withBooks) {
+        if (withBooks) {
+            return orderRepository.findOrderDetailsWithBooksByOrderId(orderIds).stream()
+                    .collect(Collectors.groupingBy(OrderDetail::getOrder));
+        } else {
+            return orderRepository.findOrderDetailsByOrderId(orderIds).stream()
+                    .collect(Collectors.groupingBy(OrderDetail::getOrder));
         }
     }
 

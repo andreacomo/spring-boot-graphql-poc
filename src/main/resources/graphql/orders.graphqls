@@ -1,5 +1,6 @@
 extend type Query {
     orderById(id: ID!): Order
+    orders: [Order]
 }
 
 extend type Mutation {
