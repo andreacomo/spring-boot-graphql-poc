@@ -1,6 +1,6 @@
 # GraphQL for Spring playground
 
-Trying graphQL on `http://localhost:8080/graphiql``:
+Trying graphQL on `http://localhost:8080/graphiql`:
 
 * query:
   * single element
