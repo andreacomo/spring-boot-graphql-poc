@@ -1,72 +1,35 @@
 package it.codingjam.spring_boot_graphql_poc.controllers;
 
 import graphql.GraphQLContext;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.SelectedField;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.BookDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.OrderDetailDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.OrderDto;
-import it.codingjam.spring_boot_graphql_poc.controllers.dtos.inputs.OrderDetailInput;
 import it.codingjam.spring_boot_graphql_poc.models.Book;
-import it.codingjam.spring_boot_graphql_poc.models.Order;
 import it.codingjam.spring_boot_graphql_poc.services.OrderFetchStrategy;
 import it.codingjam.spring_boot_graphql_poc.services.OrderService;
 import org.dataloader.BatchLoaderEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.graphql.data.method.annotation.*;
+import org.springframework.graphql.data.method.annotation.BatchMapping;
+import org.springframework.graphql.data.method.annotation.ContextValue;
 import org.springframework.stereotype.Controller;
 
-import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
-public class OrderController {
+public class OrderDataFetcher {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrderDataFetcher.class);
 
     private final OrderService orderService;
 
-    public OrderController(OrderService orderService) {
+    public OrderDataFetcher(OrderService orderService) {
         this.orderService = orderService;
-    }
-
-//    @QueryMapping
-//    public Order orderById(@Argument UUID id, GraphQLContext context) {
-//        return orderService.findOrderById(id)
-//                .orElse(null);
-//    }
-
-    @QueryMapping
-    public OrderDto orderById(@Argument UUID id, DataFetchingEnvironment env) {
-        Set<String> selectedFieldNames = getSelectedFieldNames(env);
-        LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
-        env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
-
-        return orderService.findOrderById(id)
-                .map(o -> new OrderDto(o.getId(), o.getCreationDate()))
-                .orElse(null);
-    }
-
-    @QueryMapping
-    public List<OrderDto> orders(DataFetchingEnvironment env) {
-        Set<String> selectedFieldNames = getSelectedFieldNames(env);
-        LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
-        env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
-
-        return orderService.findAllOrders().stream()
-                .map(o -> new OrderDto(o.getId(), o.getCreationDate()))
-                .toList();
-    }
-
-    @MutationMapping
-    public OrderDto createOrder(@Argument List<OrderDetailInput> orderDetails, DataFetchingEnvironment env) {
-        Order order = orderService.saveOrder(orderDetails);
-        env.getGraphQlContext().put("selectedFieldNames", getSelectedFieldNames(env));
-
-        return new OrderDto(order.getId(), order.getCreationDate());
     }
 
     @BatchMapping(typeName = "Order")
@@ -111,16 +74,4 @@ public class OrderController {
                         },
                         (o1, o2) -> o1);
     }
-
-    private static Set<String> getSelectedFieldNames(DataFetchingEnvironment env) {
-        return env.getSelectionSet().getFields().stream()
-                .map(SelectedField::getFullyQualifiedName)
-                .collect(Collectors.toSet());
-    }
-
-//    @SchemaMapping(typeName = "OrderDetail")
-//    public BookDto book(OrderDetailDto detail, GraphQLContext context) {
-//        Map<UUID, Book> orderIdToBook = context.get("orderIdToBook");
-//        return new BookDto(orderIdToBook.get(detail.id()));
-//    }
 }
