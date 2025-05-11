@@ -12,6 +12,9 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
+    @Query("select d from OrderDetail d join fetch d.book b join fetch b.author where d.order.id in (:orderIds)")
+    List<OrderDetail> findOrderDetailsWithBooksAndAuthorsByOrderId(List<UUID> orderIds);
+
     @Query("select d from OrderDetail d join fetch d.book b where d.order.id in (:orderIds)")
     List<OrderDetail> findOrderDetailsWithBooksByOrderId(List<UUID> orderIds);
 

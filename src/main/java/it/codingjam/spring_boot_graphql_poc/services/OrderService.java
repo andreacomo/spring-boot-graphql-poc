@@ -38,15 +38,6 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderDetail> findDetailsByOrderId(UUID orderId, boolean withBooks) {
-        if (withBooks) {
-            return orderRepository.findOrderDetailsWithBooksByOrderId(List.of(orderId));
-        } else {
-            return orderRepository.findOrderDetailsByOrderId(List.of(orderId));
-        }
-    }
-
-    @Transactional(readOnly = true)
     public Map<Order, List<OrderDetail>> findDetailsByOrderId(List<UUID> orderIds, boolean withBooks) {
         if (withBooks) {
             return orderRepository.findOrderDetailsWithBooksByOrderId(orderIds).stream()
@@ -55,6 +46,17 @@ public class OrderService {
             return orderRepository.findOrderDetailsByOrderId(orderIds).stream()
                     .collect(Collectors.groupingBy(OrderDetail::getOrder));
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Order, List<OrderDetail>> findDetailsByOrderId(List<UUID> orderIds, OrderFetchStrategy strategy) {
+        List<OrderDetail> details = switch (strategy) {
+            case WITHOUT_BOOKS -> orderRepository.findOrderDetailsByOrderId(orderIds);
+            case WITH_BOOKS -> orderRepository.findOrderDetailsWithBooksByOrderId(orderIds);
+            case WITH_BOOKS_AND_AUTHORS -> orderRepository.findOrderDetailsWithBooksAndAuthorsByOrderId(orderIds);
+        };
+        return details.stream()
+                .collect(Collectors.groupingBy(OrderDetail::getOrder));
     }
 
     @Transactional

@@ -13,12 +13,34 @@ Trying graphQL on `http://localhost:8080/graphiql``:
           price
           book {
             name
+            author {             
+              firstName
+              lastName
+            }
           }
         }
       }
     }
     ```
   * list
+    ```graphql
+    query MyQuery {
+      orders {
+        id
+        orderDetails {
+          price
+          quantity 
+          book {
+            name
+            author {
+              firstName
+              lastName
+            }
+          }
+        }
+      }
+    }
+    ```
   * paged
 * mutation
   * creation

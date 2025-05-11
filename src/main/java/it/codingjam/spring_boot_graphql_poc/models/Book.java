@@ -18,7 +18,7 @@ public class Book implements Serializable {
 
     private Integer pageCount;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     private Author author;
 

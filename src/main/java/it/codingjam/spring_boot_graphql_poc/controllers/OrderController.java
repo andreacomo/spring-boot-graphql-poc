@@ -9,6 +9,7 @@ import it.codingjam.spring_boot_graphql_poc.controllers.dtos.OrderDto;
 import it.codingjam.spring_boot_graphql_poc.controllers.dtos.inputs.OrderDetailInput;
 import it.codingjam.spring_boot_graphql_poc.models.Book;
 import it.codingjam.spring_boot_graphql_poc.models.Order;
+import it.codingjam.spring_boot_graphql_poc.services.OrderFetchStrategy;
 import it.codingjam.spring_boot_graphql_poc.services.OrderService;
 import org.dataloader.BatchLoaderEnvironment;
 import org.slf4j.Logger;
@@ -17,10 +18,7 @@ import org.springframework.graphql.data.method.annotation.*;
 import org.springframework.stereotype.Controller;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,7 +41,7 @@ public class OrderController {
 
     @QueryMapping
     public OrderDto orderById(@Argument UUID id, DataFetchingEnvironment env) {
-        List<String> selectedFieldNames = getSelectedFieldNames(env);
+        Set<String> selectedFieldNames = getSelectedFieldNames(env);
         LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
         env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
 
@@ -54,7 +52,7 @@ public class OrderController {
 
     @QueryMapping
     public List<OrderDto> orders(DataFetchingEnvironment env) {
-        List<String> selectedFieldNames = getSelectedFieldNames(env);
+        Set<String> selectedFieldNames = getSelectedFieldNames(env);
         LOGGER.info("selectedFieldNames: {}", selectedFieldNames);
         env.getGraphQlContext().put("selectedFieldNames", selectedFieldNames);
 
@@ -72,8 +70,7 @@ public class OrderController {
     }
 
     @BatchMapping(typeName = "Order")
-    public Map<OrderDto, List<OrderDetailDto>> orderDetails(List<OrderDto> orders, @ContextValue("selectedFieldNames") List<String> selectedFieldNames, GraphQLContext context) {
-        boolean withBooks = selectedFieldNames.contains("Order.orderDetails/OrderDetail.book");
+    public Map<OrderDto, List<OrderDetailDto>> orderDetails(List<OrderDto> orders, GraphQLContext context) {
         Map<UUID, Book> detailIdToBook = new HashMap<>();
         context.put("detailIdToBook", detailIdToBook);
 
@@ -83,7 +80,9 @@ public class OrderController {
         Map<UUID, OrderDto> ordersById = orders.stream()
                 .collect(Collectors.toMap(OrderDto::id, Function.identity()));
 
-        return orderService.findDetailsByOrderId(orderIds, withBooks).entrySet().stream()
+        OrderFetchStrategy strategy = OrderFetchStrategy.fromSelectedFields(context.get("selectedFieldNames"));
+        LOGGER.info("Using fetch strategy: {}", strategy);
+        return orderService.findDetailsByOrderId(orderIds, strategy).entrySet().stream()
                 .reduce(
                         new HashMap<>(),
                         (acc, entry) -> {
@@ -97,19 +96,6 @@ public class OrderController {
                         },
                         (o1, o2) -> o1);
     }
-
-//    @SchemaMapping(typeName = "Order")
-//    public List<OrderDetailDto> orderDetails(OrderDto order, @ContextValue("selectedFieldNames") List<String> selectedFieldNames, GraphQLContext context) {
-//        boolean withBooks = selectedFieldNames.contains("Order.orderDetails/OrderDetail.book");
-//        Map<UUID, Book> detailIdToBook = new HashMap<>();
-//        context.put("detailIdToBook", detailIdToBook);
-//        return orderService.findDetailsByOrderId(order.id(), withBooks).stream()
-//                .map(d -> {
-//                    detailIdToBook.put(d.getId(), d.getBook());
-//                    return new OrderDetailDto(d.getId(), d.getQuantity(), d.getPrice());
-//                })
-//                .toList();
-//    }
 
     @BatchMapping(typeName = "OrderDetail")
     public Map<OrderDetailDto, BookDto> book(List<OrderDetailDto> details, @ContextValue("detailIdToBook") Map<UUID, Book> detailIdToBook , BatchLoaderEnvironment env) {
@@ -126,10 +112,10 @@ public class OrderController {
                         (o1, o2) -> o1);
     }
 
-    private static List<String> getSelectedFieldNames(DataFetchingEnvironment env) {
+    private static Set<String> getSelectedFieldNames(DataFetchingEnvironment env) {
         return env.getSelectionSet().getFields().stream()
                 .map(SelectedField::getFullyQualifiedName)
-                .toList();
+                .collect(Collectors.toSet());
     }
 
 //    @SchemaMapping(typeName = "OrderDetail")
